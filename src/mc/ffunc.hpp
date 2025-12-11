@@ -646,7 +646,7 @@ Differentiation</A></I>, SIAM, 2009
 #include <stdexcept>
 #include <cassert>
 #include <climits>
-
+#include <limits>
 #ifdef MC__USE_THREAD
  #include <thread>
 #endif
