@@ -115,7 +115,7 @@ Possible errors encountered in using mc::Interval are:
 #include <iostream>
 #include <iomanip>
 #include <stdarg.h>
-
+#include <cereal/types/utility.hpp> 
 #include "mcfunc.hpp"
 
 //#define MC__INTERVAL_TRACE
@@ -494,7 +494,10 @@ public:
       return _u;
     }
   /** @} */
-  
+    template<class Archive>
+    void serialize(Archive& ar) {
+        ar(CEREAL_NVP(_l), CEREAL_NVP(_u));
+    }
 private:
 
   //! @brief Lower bound
