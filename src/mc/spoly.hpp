@@ -236,7 +236,7 @@ public:
     {
       if( _mapmon.empty() || !minord() ) return 0;
       unsigned ord = maxord();
-      for( auto const& [mon,coef] : mapmon ){
+      for( auto const& [mon,coef] : mapmon() ){
         unsigned const exp = mon.exp(x);
         if( exp < ord ) ord = exp;
       }
