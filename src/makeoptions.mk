@@ -26,9 +26,9 @@ LIB_FILIB   = -L$(PATH_FILIB)/lib -lprim
 INC_FILIB   = -I$(PATH_FILIB)/include -I$(PATH_FILIB)/include/interval
 FLAG_FILIB = -frounding-math #-DMC__USE_FILIB
 
-PATH_BOOST = /opt/homebrew/Cellar/boost/1.90.0
-LIB_BOOST  =/opt/homebrew/Cellar/boost/1.90.0/lib/
-INC_BOOST  = -I/usr/include -I/opt/homebrew/Cellar/boost/1.90.0/include
+PATH_BOOST = ${BOOST_ROOT}
+LIB_BOOST  =${BOOST_ROOT}/lib
+INC_BOOST  = -I${BOOST_ROOT}/include
 FLAG_BOOST = -DBOOST_UBLAS_NO_STD_CERR -DMC__USE_BOOST
 
 PATH_HSL =
