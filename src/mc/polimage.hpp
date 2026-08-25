@@ -2977,22 +2977,36 @@ PolBase<T>::_add_cuts_DIV
       auto itCut = add_cut( VarR->_var.opdef().first, PolCut<T>::EQ, Cst1 );
       (*itCut)->append( *VarR, *itVar2->second, 1. );
     }
-    // -- Convex Case
-    else if( (pVar1->num().val() >= 0. && Op<T>::l(itVar2->second->_range) > 0.)
-     || (pVar1->num().val() <= 0. && Op<T>::u(itVar2->second->_range) < 0.) ){
-      add_semilinear_cuts( VarR->_var.opdef().first, *itVar2->second, Op<T>::l(itVar2->second->_range),
-        Op<T>::u(itVar2->second->_range), *VarR, PolCut<T>::LE, loc::scalinv, &Cst1, 0 );
-      add_sandwich_cuts( VarR->_var.opdef().first, *itVar2->second, Op<T>::l(itVar2->second->_range),
-        Op<T>::u(itVar2->second->_range), *VarR, Op<T>::l(VarR->_range), Op<T>::u(VarR->_range),
-        PolCut<T>::GE, loc::scalinv, &Cst1, 0 );
+    // -- Base case: Cst1 = 1, i.e. relax 1/v2 directly via its convex/concave envelope.
+    //    This is also the recursion base that the decomposition case below reduces to,
+    //    so it must NOT itself decompose (this avoids infinite recursion).
+    else if( Cst1 == 1. ){
+      if( Op<T>::l(itVar2->second->_range) > 0. ){
+        add_semilinear_cuts( VarR->_var.opdef().first, *itVar2->second, Op<T>::l(itVar2->second->_range),
+          Op<T>::u(itVar2->second->_range), *VarR, PolCut<T>::LE, loc::scalinv, &Cst1, 0 );
+        add_sandwich_cuts( VarR->_var.opdef().first, *itVar2->second, Op<T>::l(itVar2->second->_range),
+          Op<T>::u(itVar2->second->_range), *VarR, Op<T>::l(VarR->_range), Op<T>::u(VarR->_range),
+          PolCut<T>::GE, loc::scalinv, &Cst1, 0 );
+      }
+      else{
+        add_semilinear_cuts( VarR->_var.opdef().first, *itVar2->second, Op<T>::l(itVar2->second->_range),
+          Op<T>::u(itVar2->second->_range), *VarR, PolCut<T>::GE, loc::scalinv, &Cst1, 0 );
+        add_sandwich_cuts( VarR->_var.opdef().first, *itVar2->second, Op<T>::l(itVar2->second->_range),
+          Op<T>::u(itVar2->second->_range), *VarR, Op<T>::l(VarR->_range), Op<T>::u(VarR->_range),
+          PolCut<T>::LE, loc::scalinv, &Cst1, 0 );
+      }
     }
-    // -- Concave Case
+    // -- Decomposition case: general constant Cst1, i.e. Cst1/v2 = Cst1 * (1/v2). Relax
+    //    v2inv = 1/v2 first (falling into the base case above), then link VarR = Cst1*v2inv
+    //    via an exact linear equality -- scaling a relaxed variable by a constant is exact,
+    //    so no further approximation is introduced by this step.
     else{
-      add_semilinear_cuts( VarR->_var.opdef().first, *itVar2->second, Op<T>::l(itVar2->second->_range),
-        Op<T>::u(itVar2->second->_range), *VarR, PolCut<T>::GE, loc::scalinv, &Cst1, 0 );
-      add_sandwich_cuts( VarR->_var.opdef().first, *itVar2->second, Op<T>::l(itVar2->second->_range),
-        Op<T>::u(itVar2->second->_range), *VarR, Op<T>::l(VarR->_range), Op<T>::u(VarR->_range),
-        PolCut<T>::LE, loc::scalinv, &Cst1, 0 );
+      FFVar VarInvExpr = inv( *pVar2 );
+      FFOp* pOpInv = VarInvExpr.opdef().first;
+      PolVar<T>* VarInv = _append_var( pOpInv->varout[0], Op<T>::inv( itVar2->second->_range ), true );
+      _add_cuts_DIV( VarInv, pOpInv->varin[0], pOpInv->varin[1] );
+
+      add_cut( VarR->_var.opdef().first, PolCut<T>::EQ, 0., *VarR, 1., *VarInv, -Cst1 );
     }
   }
 
