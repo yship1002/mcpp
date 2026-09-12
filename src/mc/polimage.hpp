@@ -2977,11 +2977,14 @@ PolBase<T>::_add_cuts_DIV
       auto itCut = add_cut( VarR->_var.opdef().first, PolCut<T>::EQ, Cst1 );
       (*itCut)->append( *VarR, *itVar2->second, 1. );
     }
-    // -- Base case: Cst1 = 1, i.e. relax 1/v2 directly via its convex/concave envelope.
-    //    This is also the recursion base that the decomposition case below reduces to,
-    //    so it must NOT itself decompose (this avoids infinite recursion).
-    else if( Cst1 == 1. ){
-      if( Op<T>::l(itVar2->second->_range) > 0. ){
+    // -- General case: relax Cst1/v2 directly via its convex/concave envelope, for any
+    //    nonzero constant Cst1. f(y) = Cst1/y has f''(y) = 2*Cst1/y^3, so f is convex
+    //    over the range of v2 when Cst1 and that range have the same sign, and concave
+    //    when they have opposite signs.
+    else{
+      bool const denomPos = ( Op<T>::l(itVar2->second->_range) > 0. );
+      bool const convex   = ( Cst1 > 0. ) == denomPos;
+      if( convex ){
         add_semilinear_cuts( VarR->_var.opdef().first, *itVar2->second, Op<T>::l(itVar2->second->_range),
           Op<T>::u(itVar2->second->_range), *VarR, PolCut<T>::LE, loc::scalinv, &Cst1, 0 );
         add_sandwich_cuts( VarR->_var.opdef().first, *itVar2->second, Op<T>::l(itVar2->second->_range),
@@ -2995,18 +2998,6 @@ PolBase<T>::_add_cuts_DIV
           Op<T>::u(itVar2->second->_range), *VarR, Op<T>::l(VarR->_range), Op<T>::u(VarR->_range),
           PolCut<T>::LE, loc::scalinv, &Cst1, 0 );
       }
-    }
-    // -- Decomposition case: general constant Cst1, i.e. Cst1/v2 = Cst1 * (1/v2). Relax
-    //    v2inv = 1/v2 first (falling into the base case above), then link VarR = Cst1*v2inv
-    //    via an exact linear equality -- scaling a relaxed variable by a constant is exact,
-    //    so no further approximation is introduced by this step.
-    else{
-      FFVar VarInvExpr = inv( *pVar2 );
-      FFOp* pOpInv = VarInvExpr.opdef().first;
-      PolVar<T>* VarInv = _append_var( pOpInv->varout[0], Op<T>::inv( itVar2->second->_range ), true );
-      _add_cuts_DIV( VarInv, pOpInv->varin[0], pOpInv->varin[1] );
-
-      add_cut( VarR->_var.opdef().first, PolCut<T>::EQ, 0., *VarR, 1., *VarInv, -Cst1 );
     }
   }
 
